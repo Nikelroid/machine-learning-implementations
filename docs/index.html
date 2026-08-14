@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ML from Scratch — Interactive Playground</title>
+<meta name="description" content="Four machine learning algorithms implemented from scratch, running live in the browser: KNN, K-Means++, Perceptron and Logistic Regression.">
+<style>
+  :root{
+    --bg:#FAF9F5; --ink:#1D1B16; --muted:#6F6A5F; --line:#E5E1D6; --card:#FFFFFF;
+    --accent:#2D6B60; --accent2:#B0362C; --a:#2F6FB0; --b:#C8791F;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#161511; --ink:#EBE8DF; --muted:#9A9486; --line:#2E2C25; --card:#1E1C17;
+           --accent:#5FB3A1; --accent2:#E05B4E; --a:#6BA6DE; --b:#E0A354;
+           --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.55 "Seravek","Avenir Next","Segoe UI",system-ui,sans-serif;padding:40px 20px 72px}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:2rem;margin:0 0 6px;font-weight:600}
+  .sub{color:var(--muted);margin:0 0 28px;font-size:.95rem}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{padding:8px 14px;border:1px solid var(--line);background:var(--card);color:var(--muted);
+    border-radius:999px;cursor:pointer;font-size:.85rem;font-weight:600;transition:.15s}
+  .tab:hover{color:var(--ink)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .panel{display:grid;grid-template-columns:1fr 300px;gap:22px;align-items:start}
+  @media (max-width:820px){.panel{grid-template-columns:1fr}}
+  .stage{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:14px;box-shadow:var(--shadow)}
+  canvas{width:100%;height:auto;display:block;border-radius:8px;cursor:crosshair;touch-action:none}
+  .side h2{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 8px;font-weight:700}
+  .side p{font-size:.88rem;color:var(--muted);margin:0 0 14px}
+  .ctl{margin-bottom:14px}
+  .ctl label{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:5px;font-weight:600}
+  .ctl label span{color:var(--accent);font-family:ui-monospace,"SF Mono",Menlo,monospace}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  button{padding:8px 13px;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:8px;cursor:pointer;font-size:.83rem;font-weight:600;font-family:inherit;transition:.15s}
+  button:hover{border-color:var(--accent);color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover{opacity:.9;color:#fff}
+  .stat{display:flex;justify-content:space-between;font-size:.85rem;padding:6px 0;
+    border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .stat b{font-family:ui-monospace,"SF Mono",Menlo,monospace;color:var(--accent)}
+  .hint{font-size:.78rem;color:var(--muted);margin-top:14px;line-height:1.45}
+  .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:.83rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .foot a{color:var(--accent);text-decoration:none}
+  .foot a:hover{text-decoration:underline}
+  .legend{display:flex;gap:14px;font-size:.78rem;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ML from Scratch — Playground</h1>
+  <p class="sub">Four of the algorithms from this repository, reimplemented in plain JavaScript and
+     running live. Click the canvas to add points and watch each one respond. No libraries.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-view="knn" aria-selected="true">K-Nearest Neighbours</button>
+    <button class="tab" role="tab" data-view="kmeans" aria-selected="false">K-Means++</button>
+    <button class="tab" role="tab" data-view="perceptron" aria-selected="false">Perceptron</button>
+    <button class="tab" role="tab" data-view="logistic" aria-selected="false">Logistic Regression</button>
+  </div>
+
+  <div class="panel">
+    <div class="stage">
+      <canvas id="cv" width="1200" height="800"></canvas>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="side">
+      <h2 id="algoName">K-Nearest Neighbours</h2>
+      <p id="algoDesc"></p>
+      <div id="controls"></div>
+      <div id="stats"></div>
+      <div class="btns">
+        <button class="primary" id="run">Run</button>
+        <button id="clear">Clear</button>
+        <button id="sample">Sample data</button>
+      </div>
+      <p class="hint" id="hint"></p>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Ten algorithms implemented from scratch in NumPy and PyTorch primitives.</span>
+    <span>
+      <a href="https://github.com/Nikelroid/machine-learning-implementations">Repository</a> ·
+      <a href="https://kelidari.com">kelidari.com</a>
+    </span>
+  </div>
+</div>
+
+<script>
+"use strict";
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const CLS = ['#2F6FB0', '#C8791F', '#2D6B60'];
+let view = 'knn', pts = [], activeClass = 0, model = null;
+
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+/* ---------- shared helpers ---------- */
+const dist2 = (a, b) => (a.x-b.x)**2 + (a.y-b.y)**2;
+function clearCanvas(){
+  ctx.fillStyle = css('--card') || '#fff';
+  ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; ctx.globalAlpha = .5;
+  for(let i=1;i<10;i++){
+    ctx.beginPath(); ctx.moveTo(W*i/10,0); ctx.lineTo(W*i/10,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,H*i/10); ctx.lineTo(W,H*i/10); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function drawPoints(){
+  for(const p of pts){
+    ctx.beginPath(); ctx.arc(p.x,p.y,9,0,Math.PI*2);
+    ctx.fillStyle = CLS[p.c]; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = css('--card'); ctx.stroke();
+  }
+}
+function setStats(rows){
+  document.getElementById('stats').innerHTML =
+    rows.map(([k,v])=>`<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
+}
+function setLegend(items){
+  document.getElementById('legend').innerHTML =
+    items.map(([c,t])=>`<span><i class="dot" style="background:${c}"></i>${t}</span>`).join('');
+}
+
+/* ---------- 1. KNN ---------- */
+function runKNN(){
+  const k = +document.getElementById('k').value;
+  clearCanvas();
+  if(pts.length === 0){ drawPoints(); setStats([['points','0']]); return; }
+  const step = 12;                                  // decision-region raster
+  for(let x=0;x<W;x+=step){
+    for(let y=0;y<H;y+=step){
+      const probe = {x,y};
+      const near = pts.map(p=>({c:p.c,d:dist2(p,probe)})).sort((a,b)=>a.d-b.d).slice(0,Math.min(k,pts.length));
+      const votes = [0,0,0];
+      near.forEach(n=>votes[n.c]++);
+      const win = votes.indexOf(Math.max(...votes));
+      ctx.fillStyle = CLS[win] + '22';
+      ctx.fillRect(x,y,step,step);
+    }
+  }
+  drawPoints();
+  // leave-one-out accuracy — the honest way to score a lazy learner
+  let correct = 0;
+  for(let i=0;i<pts.length;i++){
+    const others = pts.filter((_,j)=>j!==i);
+    if(others.length===0) continue;
+    const near = others.map(p=>({c:p.c,d:dist2(p,pts[i])})).sort((a,b)=>a.d-b.d).slice(0,Math.min(k,others.length));
+    const votes=[0,0,0]; near.forEach(n=>votes[n.c]++);
+    if(votes.indexOf(Math.max(...votes))===pts[i].c) correct++;
+  }
+  setStats([['points',pts.length],['k',k],
+            ['leave-one-out acc', pts.length? (100*correct/pts.length).toFixed(1)+'%' : '—']]);
+}
+
+/* ---------- 2. K-Means++ ---------- */
+function runKMeans(){
+  const K = +document.getElementById('K').value;
+  if(pts.length < K){ clearCanvas(); drawPoints(); setStats([['need ≥ K points','']]); return; }
+  // k-means++ seeding: first centre uniform, rest weighted by squared distance
+  let cents = [ {x:pts[0].x, y:pts[0].y} ];
+  const rnd = pts[Math.floor(Math.random()*pts.length)];
+  cents = [{x:rnd.x,y:rnd.y}];
+  while(cents.length < K){
+    const d = pts.map(p=>Math.min(...cents.map(c=>dist2(p,c))));
+    const tot = d.reduce((a,b)=>a+b,0);
+    let r = Math.random()*tot, idx = 0;
+    for(let i=0;i<d.length;i++){ r -= d[i]; if(r<=0){ idx=i; break; } }
+    cents.push({x:pts[idx].x,y:pts[idx].y});
+  }
+  let assign = [], iters = 0, inertia = 0;
+  for(let it=0; it<60; it++){
+    iters = it+1;
+    const na = pts.map(p=>{
+      let best=0,bd=Infinity;
+      cents.forEach((c,i)=>{ const dd=dist2(p,c); if(dd<bd){bd=dd;best=i;} });
+      return best;
+    });
+    const moved = na.some((v,i)=>v!==assign[i]);
+    assign = na;
+    const sums = cents.map(()=>({x:0,y:0,n:0}));
+    pts.forEach((p,i)=>{ sums[assign[i]].x+=p.x; sums[assign[i]].y+=p.y; sums[assign[i]].n++; });
+    cents = sums.map((s,i)=> s.n ? {x:s.x/s.n, y:s.y/s.n} : cents[i]);
+    if(!moved) break;
+  }
+  inertia = pts.reduce((a,p,i)=>a+dist2(p,cents[assign[i]]),0);
+  clearCanvas();
+  pts.forEach((p,i)=>{
+    ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(cents[assign[i]].x,cents[assign[i]].y);
+    ctx.strokeStyle = CLS[assign[i]%3]+'55'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x,p.y,9,0,Math.PI*2);
+    ctx.fillStyle = CLS[assign[i]%3]; ctx.fill();
+    ctx.lineWidth=2.5; ctx.strokeStyle=css('--card'); ctx.stroke();
+  });
+  cents.forEach((c,i)=>{
+    ctx.beginPath(); ctx.arc(c.x,c.y,17,0,Math.PI*2);
+    ctx.fillStyle=css('--card'); ctx.fill();
+    ctx.lineWidth=5; ctx.strokeStyle=CLS[i%3]; ctx.stroke();
+  });
+  setStats([['points',pts.length],['clusters',K],['iterations to converge',iters],
+            ['inertia',(inertia/1e5).toFixed(2)+'e5']]);
+}
+
+/* ---------- 3 & 4. Linear classifiers ---------- */
+function runLinear(kind){
+  const epochs = +document.getElementById('ep').value;
+  const lr = +document.getElementById('lr').value / 1000;
+  const A = pts.filter(p=>p.c===0), B = pts.filter(p=>p.c===1);
+  if(!A.length || !B.length){
+    clearCanvas(); drawPoints();
+    setStats([['need both classes','']]); return;
+  }
+  const X = pts.filter(p=>p.c<2).map(p=>[p.x/W, p.y/H]);
+  const y = pts.filter(p=>p.c<2).map(p=>p.c);
+  let w=[0,0], b=0, hist=[];
+  for(let e=0;e<epochs;e++){
+    let gw=[0,0], gb=0, loss=0;
+    for(let i=0;i<X.length;i++){
+      const z = w[0]*X[i][0] + w[1]*X[i][1] + b;
+      if(kind==='perceptron'){
+        const pred = z>0?1:0;
+        const err = y[i]-pred;                     // perceptron rule
+        gw[0]+=err*X[i][0]; gw[1]+=err*X[i][1]; gb+=err;
+        loss += Math.abs(err);
+      } else {
+        const s = 1/(1+Math.exp(-z));              // logistic: gradient of NLL
+        const err = y[i]-s;
+        gw[0]+=err*X[i][0]; gw[1]+=err*X[i][1]; gb+=err;
+        loss += -(y[i]*Math.log(s+1e-9)+(1-y[i])*Math.log(1-s+1e-9));
+      }
+    }
+    w[0]+=lr*gw[0]; w[1]+=lr*gw[1]; b+=lr*gb;
+    hist.push(loss/X.length);
+  }
+  clearCanvas();
+  const step=12;
+  for(let x=0;x<W;x+=step) for(let yy=0;yy<H;yy+=step){
+    const z = w[0]*(x/W)+w[1]*(yy/H)+b;
+    const s = 1/(1+Math.exp(-z));
+    ctx.fillStyle = (s>0.5?CLS[1]:CLS[0]) + (kind==='logistic'
+        ? Math.round(Math.min(Math.abs(s-0.5)*2,1)*40+8).toString(16).padStart(2,'0') : '22');
+    ctx.fillRect(x,yy,step,step);
+  }
+  // decision boundary w0*x + w1*y + b = 0
+  ctx.beginPath(); ctx.lineWidth=4; ctx.strokeStyle=css('--ink');
+  if(Math.abs(w[1])>1e-6){
+    const y0 = (-b - w[0]*0)/w[1]*H, y1 = (-b - w[0]*1)/w[1]*H;
+    ctx.moveTo(0,y0); ctx.lineTo(W,y1);
+  } else if(Math.abs(w[0])>1e-6){
+    const x0 = -b/w[0]*W; ctx.moveTo(x0,0); ctx.lineTo(x0,H);
+  }
+  ctx.stroke();
+  drawPoints();
+  let correct=0;
+  X.forEach((xi,i)=>{ const z=w[0]*xi[0]+w[1]*xi[1]+b; if((z>0?1:0)===y[i]) correct++; });
+  setStats([['points',X.length],['epochs',epochs],
+            ['train accuracy',(100*correct/X.length).toFixed(1)+'%'],
+            [kind==='logistic'?'mean NLL':'mean errors', hist[hist.length-1].toFixed(3)]]);
+}
+
+/* ---------- views ---------- */
+const VIEWS = {
+  knn:{
+    name:'K-Nearest Neighbours', run:runKNN,
+    desc:'No training step at all — every prediction is a vote among the k closest stored points. The shaded regions are the decision boundary, recomputed on a grid.',
+    hint:'Raise k and watch the boundary smooth out. Small k memorises noise; large k blurs real structure. Scored leave-one-out, since a lazy learner would otherwise score 100% on its own training set.',
+    controls:`<div class="ctl"><label>Neighbours (k) <span id="kv">3</span></label>
+      <input type="range" id="k" min="1" max="15" step="2" value="3"></div>`,
+    legend:[[CLS[0],'Class A'],[CLS[1],'Class B'],[CLS[2],'Class C']]
+  },
+  kmeans:{
+    name:'K-Means++', run:runKMeans,
+    desc:'Unsupervised. Centres are seeded by k-means++ — each new centre is drawn with probability proportional to its squared distance from the nearest existing centre — then Lloyd\'s algorithm runs to convergence.',
+    hint:'k-means++ seeding is why this converges in a handful of iterations instead of landing in a bad local optimum. Point colour shows cluster assignment, not the label you drew.',
+    controls:`<div class="ctl"><label>Clusters (K) <span id="Kv">3</span></label>
+      <input type="range" id="K" min="2" max="3" step="1" value="3"></div>`,
+    legend:[[CLS[0],'Cluster 1'],[CLS[1],'Cluster 2'],[CLS[2],'Cluster 3']]
+  },
+  perceptron:{
+    name:'Perceptron', run:()=>runLinear('perceptron'),
+    desc:'The 1958 update rule: predict, and on a mistake move the weights toward the misclassified point. Converges only if the classes are linearly separable — otherwise it never settles.',
+    hint:'Draw two overlapping blobs and watch the boundary keep twitching no matter how many epochs you give it. That non-convergence is the algorithm being honest about an impossible problem.',
+    controls:`<div class="ctl"><label>Epochs <span id="epv">50</span></label>
+        <input type="range" id="ep" min="1" max="300" step="1" value="50"></div>
+      <div class="ctl"><label>Learning rate <span id="lrv">0.050</span></label>
+        <input type="range" id="lr" min="1" max="200" step="1" value="50"></div>`,
+    legend:[[CLS[0],'Class A'],[CLS[1],'Class B']]
+  },
+  logistic:{
+    name:'Logistic Regression', run:()=>runLinear('logistic'),
+    desc:'Same linear boundary, different objective: minimise negative log-likelihood by gradient descent. The output is a calibrated probability, so the shading shows confidence rather than a hard label.',
+    hint:'Compare with the perceptron on the same points. Logistic settles on a stable boundary even when the classes overlap, because it optimises a smooth loss instead of chasing individual mistakes.',
+    controls:`<div class="ctl"><label>Epochs <span id="epv">100</span></label>
+        <input type="range" id="ep" min="1" max="500" step="1" value="100"></div>
+      <div class="ctl"><label>Learning rate <span id="lrv">0.100</span></label>
+        <input type="range" id="lr" min="1" max="300" step="1" value="100"></div>`,
+    legend:[[CLS[0],'Class A'],[CLS[1],'Class B']]
+  }
+};
+
+function mount(v){
+  view = v;
+  const V = VIEWS[v];
+  // linear classifiers are binary — fold any third class in rather than silently ignoring it
+  const maxC = (v==='perceptron'||v==='logistic') ? 2 : 3;
+  pts.forEach(p=>{ if(p.c >= maxC) p.c = maxC-1; });
+  activeClass %= maxC;
+  document.getElementById('algoName').textContent = V.name;
+  document.getElementById('algoDesc').textContent = V.desc;
+  document.getElementById('hint').textContent = V.hint;
+  document.getElementById('controls').innerHTML = V.controls;
+  setLegend(V.legend);
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t.dataset.view===v));
+  // live slider labels
+  const bind = (id,lab,fmt)=>{ const el=document.getElementById(id); if(!el) return;
+    const out=document.getElementById(lab);
+    el.addEventListener('input',()=>{ if(out) out.textContent = fmt?fmt(el.value):el.value; V.run(); }); };
+  bind('k','kv'); bind('K','Kv'); bind('ep','epv');
+  bind('lr','lrv', v=>(v/1000).toFixed(3));
+  V.run();
+}
+
+/* ---------- interaction ---------- */
+cv.addEventListener('pointerdown', e=>{
+  const r = cv.getBoundingClientRect();
+  const x = (e.clientX-r.left)*(W/r.width), y=(e.clientY-r.top)*(H/r.height);
+  const maxC = (view==='perceptron'||view==='logistic') ? 2 : 3;
+  pts.push({x,y,c:activeClass % maxC});
+  activeClass = (activeClass+1) % maxC;
+  VIEWS[view].run();
+});
+document.getElementById('clear').onclick = ()=>{ pts=[]; activeClass=0; VIEWS[view].run(); };
+document.getElementById('run').onclick   = ()=> VIEWS[view].run();
+document.getElementById('sample').onclick = ()=>{
+  pts = [];
+  const maxC = (view==='perceptron'||view==='logistic') ? 2 : 3;
+  const centres = [[W*0.28,H*0.32],[W*0.70,H*0.66],[W*0.72,H*0.26]].slice(0,maxC);
+  centres.forEach((c,ci)=>{
+    for(let i=0;i<22;i++){
+      // Box-Muller, so the blobs are actually Gaussian
+      const u=Math.random()||1e-9, v=Math.random();
+      const g1=Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+      const g2=Math.sqrt(-2*Math.log(u))*Math.sin(2*Math.PI*v);
+      pts.push({x:c[0]+g1*W*0.075, y:c[1]+g2*H*0.075, c:ci});
+    }
+  });
+  VIEWS[view].run();
+};
+document.querySelectorAll('.tab').forEach(t=> t.onclick = ()=> mount(t.dataset.view));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>VIEWS[view].run());
+
+mount('knn');
+document.getElementById('sample').click();
+</script>
+</body>
+</html>
