@@ -1,123 +1,105 @@
+<h1 align="center">Machine Learning Algorithms from Scratch</h1>
 
-# ML-Implementations-From-Scratch
+<p align="center">
+  <i>Ten classical and modern ML algorithms implemented in NumPy and PyTorch primitives —<br/>
+  no scikit-learn in the algorithm bodies, no autograd where the point is the gradient.</i>
+</p>
 
-![Python](https://img.shields.io/badge/python-3.8%2B-blue?logo=python&logoColor=white)
-![NumPy](https://img.shields.io/badge/numpy-1.24%2B-013243?logo=numpy&logoColor=white)
-![Matplotlib](https://img.shields.io/badge/Matplotlib-Data_Viz-orange?logo=matplotlib&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-Data_Analysis-150458?logo=pandas&logoColor=white)
-![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-F37626?logo=jupyter&logoColor=white)
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white">
+  <img src="https://img.shields.io/badge/NumPy-013243?style=flat&logo=numpy&logoColor=white">
+  <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=flat&logo=pytorch&logoColor=white">
+  <img src="https://img.shields.io/badge/algorithms-10-0b5b39?style=flat">
+</p>
 
-## Project Description
+---
 
-**ML-Implementations-From-Scratch** is a collection of Python implementations that peel back the layers of abstraction found in libraries like TensorFlow or Scikit-Learn. By building algorithms like K-Means, Neural Networks, and Transformers using primarily **NumPy**, this project serves as a practical guide to understanding the underlying mathematics—gradients, matrix multiplications, and probability distributions—that drive modern AI.
+## Why this repo exists
 
-## Detailed Modules & Use Cases
+Calling `sklearn.fit()` teaches you an API. Writing the update rule teaches you why the
+algorithm behaves the way it does — where it converges, where it stalls, and what each
+hyperparameter is actually trading off.
 
-### 📂 Work 1: K-Nearest Neighbors (KNN)
+Every algorithm below was written against a provided test harness (USC CSCI 567, Spring 2025):
+the data loaders and unit tests came with the assignment, the algorithm bodies are mine. Where
+a result is quoted, it comes from my own recorded run, not from the literature.
 
-  * **Description:** Implements the KNN algorithm, a non-parametric method used for classification and regression. It predicts the label of a data point by looking at the 'K' closest labeled data points in the feature space.
-  * **Key Files:** `knn.py`, `data.py`.
-  * **Use Case:**
-      * **Medical Diagnosis:** The included `heart_disease.csv` example demonstrates predicting the presence of heart disease based on patient metrics (age, cholesterol, etc.) by comparing them to similar historical patient profiles.
+## What's implemented
 
-### 📂 Work 2: Linear Regression
+| # | Algorithm | What was written by hand |
+|---|---|---|
+| 1 | **K-Nearest Neighbours** | Euclidean / Minkowski-L3 / cosine distances, min-max and L2 scalers, F1 scoring, and the k × distance × scaler tuning grid |
+| 2 | **Linear & Ridge Regression** | Closed-form normal equations, λ search over 2⁻⁴⁰…2⁰, polynomial feature maps p = 2…5 |
+| 3 | **Perceptron, Logistic & Softmax Regression** | Hand-derived gradients; binary GD, and multiclass softmax by both **full-batch GD and SGD** |
+| 4 | **Multilayer Perceptron** | Full **forward and backward passes** — linear, ReLU, tanh, inverted **dropout** (train/test aware), softmax cross-entropy, mini-batch **SGD with momentum** and step decay. No autograd |
+| 5 | **AdaBoost** | Sample reweighting, β = ½·ln((1−ε)/ε), weighted-vote prediction, over decision-tree weak learners |
+| 6 | **K-Means & K-Means++** | Lloyd's algorithm, k-means++ seeding, k-means as a classifier, and image compression by vector quantization |
+| 7 | **PCA Word Embeddings** | Embeddings from a 3000×3000 Wikipedia co-occurrence matrix; analogy solver, synonym/antonym cosine tests, gender-bias projection |
+| 8 | **Hidden Markov Model** | Forward, backward, sequence likelihood, posterior γ, pairwise ξ, and **Viterbi decoding** — plus a POS tagger (MLE π/A/B, unseen-word smoothing) |
+| 9 | **Decoder-only Transformer** | Scaled dot-product attention with a causal mask, multi-head concat, pre-LN residual blocks, token + position embeddings, autoregressive sampling |
+| 10 | **Tabular Q-Learning** | ε-greedy policy, vectorized TD update, and an experience replay buffer over a finite MDP |
 
-  * **Description:** A fundamental algorithm for modeling the relationship between a scalar response and one or more explanatory variables. It uses Gradient Descent to minimize the error (cost function) and find the best-fitting line.
-  * **Key Files:** `linear_regression.py`, `linear_regression_test.py`.
-  * **Use Case:**
-      * **Quality Prediction:** The project uses `winequality-white.csv` to predict the quality score of a wine based on chemical properties like acidity, sugar, and pH levels.
+## Results worth reading
 
-### 📂 Work 3: Binary & Multiclass Classification
+These are the numbers I actually care about — not accuracy for its own sake, but what the
+implementation revealed.
 
-  * **Description:** Explores linear classifiers for separating data into categories. It covers binary classification (two classes) and extends to multiclass problems using techniques like One-vs-All or Softmax regression.
-  * **Key Files:** `classification.py`, `bm_classify.py` (likely Block Coordinate Descent or similar optimization).
-  * **Use Case:**
-      * **Handwritten Digit Recognition:** Uses a subset of the MNIST dataset (`mnist_subset.json`) to classify images of handwritten digits (0-9) into their respective numeric categories.
+**SGD vs full-batch gradient descent** (10-class MNIST, softmax regression):
 
-### 📂 Work 4: Neural Networks (MLP)
+| Optimizer | Wall clock | Test accuracy |
+|---|---|---|
+| SGD | **0.024 s** | 73.0% |
+| Full-batch GD | 4.04 s (**170× slower**) | **89.6%** |
 
-  * **Description:** A complete implementation of a Multi-Layer Perceptron (MLP). It features forward propagation (computing predictions) and backpropagation (computing gradients) to train the network weights from scratch.
-  * **Key Files:** `neural_networks.py`, `runme.py`.
-  * **Use Case:**
-      * **Complex Pattern Recognition:** Capable of solving non-linear problems that simple linear classifiers cannot, such as recognizing complex shapes or patterns in the digits dataset.
+The tradeoff in one table: SGD gets you a usable model almost immediately, full-batch spends
+170× the compute to buy 16 points. Which one is correct depends entirely on your budget.
 
-### 📂 Work 5: Decision Trees & Boosting
+**Dropout is worth more than depth** (from-scratch MLP, MNIST 5k/1k/1k, 784→1000→10):
 
-  * **Description:** Implements Decision Trees which split data based on feature values to maximize information gain. It also includes **AdaBoost** (`boosting.py`), an ensemble technique that combines multiple "weak" decision trees to create a robust "strong" classifier.
-  * **Key Files:** `decision_tree.py`, `boosting.py`.
-  * **Use Case:**
-      * **Robust Classification:** Ideal for tabular data where interpretability is key. AdaBoost is particularly useful for improving prediction accuracy on difficult datasets by focusing on previously misclassified instances.
+| Configuration | Validation accuracy |
+|---|---|
+| ReLU + dropout 0.5 | **96.0%** (train 98.8%) |
+| ReLU, no dropout | 91.5% |
 
-### 📂 Work 6: K-Means Clustering
+A **+4.5 point** gain from one regularizer, measured across a ReLU/tanh × dropout {0, 0.25, 0.5}
+× momentum {0, 0.9} grid.
 
-  * **Description:** An unsupervised learning algorithm that partitions data into 'K' distinct clusters based on distance to centroids. The algorithm iteratively refines the centroid positions.
-  * **Key Files:** `kmeans.py`, `data_loader.py`.
-  * **Use Case:**
-      * **Image Compression:** The project demonstrates using K-Means on `baboon.tiff` to reduce the number of unique colors in an image. By clustering pixel colors and replacing them with the cluster center, the image size is significantly reduced.
+**Linear classifiers** (`work 3`): Two-Moons — perceptron 84.0% test, logistic 86.7%.
+Binarized MNIST — perceptron 82.8%, logistic 83.4%.
 
-### 📂 Work 7: Principal Component Analysis (PCA)
+**HMM POS tagging** (`work 8`): Brown corpus, 49,469 sentences, 12 universal tags.
 
-  * **Description:** A dimensionality reduction technique that projects data onto a lower-dimensional space while preserving the maximum variance. It is crucial for feature extraction and visualization.
-  * **Key Files:** `pca.py`, `utils.py`.
-  * **Use Case:**
-      * **Word Embedding Analysis:** Used here to analyze word relationships (`analogy_task.txt`). By reducing high-dimensional word vectors to 2D or 3D, we can visualize semantic similarities (e.g., "King" is to "Queen" as "Man" is to "Woman").
+## Datasets
 
-### 📂 Work 8: Hidden Markov Models (HMM)
+UCI Cleveland heart disease (303 × 13) · UCI white wine (4,399 rows) · MNIST ·
+Brown corpus · tiny-Shakespeare (1.1 MB, character-level) · Wikipedia co-occurrence matrix.
 
-  * **Description:** A statistical Markov model with unobserved (hidden) states. It computes the probability of a sequence of observed events and is heavily used in temporal pattern recognition.
-  * **Key Files:** `hmm.py`, `tagger.py`.
-  * **Use Case:**
-      * **Part-of-Speech (POS) Tagging:** The system reads sentences (`pos_sentences.txt`) and predicts the grammatical tag (Noun, Verb, Adjective) for each word based on the sequence context.
+## Layout
 
-### 📂 Work 9: Transformers (Self-Attention)
-
-  * **Description:** Implements the core architecture of modern NLP: the Transformer. It features the **Self-Attention** mechanism, allowing the model to weigh the importance of different words in a sentence regardless of their positional distance.
-  * **Key Files:** `transformer_model.py`, `train.py`.
-  * **Use Case:**
-      * **Sequence Modeling:** This is the foundational architecture behind models like BERT and GPT, used here to learn dependencies in text sequences (`input.txt`) for tasks like text generation or translation.
-
-### 📂 Work 10: Reinforcement Learning (RL)
-
-  * **Description:** Focuses on agents taking actions in an environment to maximize cumulative reward. It implements **Q-Learning** and models problems as **Finite Markov Decision Processes (MDPs)**.
-  * **Key Files:** `q_learning.py`, `finite_mdp.py`, `playground.ipynb`.
-  * **Use Case:**
-      * **Game Solving & Navigation:** The agent learns to navigate a "Grid World" environment, figuring out the optimal path to a goal state while avoiding penalties, purely through trial-and-error interaction.
-
-## Installation & Running
-
-### 1\. Clone the Repository
-
-```bash
-git clone https://github.com/nikelroid/machine-learning-implementations.git
-cd machine-learning-implementations
+```
+work 1/   KNN + distance metrics and scalers
+work 2/   linear and ridge regression
+work 3/   perceptron, logistic, multiclass softmax (GD and SGD)
+work 4/   MLP with hand-written backprop, dropout, momentum
+work 5/   AdaBoost
+work 6/   K-means, K-means++, vector-quantization image compression
+work 7/   PCA word embeddings, analogies, bias projection
+work 8/   HMM forward/backward/Viterbi + POS tagger
+work 9/   decoder-only Transformer
+work 10/  tabular Q-learning with experience replay
 ```
 
-### 2\. Dependencies
+## A note on scope
 
-It is recommended to use a virtual environment.
+These were course assignments, so the scaffolding — data loaders, class signatures, unit
+tests — was provided. What is mine is the algorithm inside each one, plus the experiments and
+ablations that produced the numbers above. I have kept the repo public because the implementations
+are the clearest evidence I have of understanding these methods from the inside rather than the
+API surface.
 
-```bash
-pip install numpy matplotlib pandas jupyter
-```
+---
 
-### 3\. Running a Module
-
-Navigate to any specific directory and run the python script.
-
-```bash
-# Example: Linear Regression
-cd "work 2"
-python linear_regression_test.py
-```
-
-## Contributing
-
-If you spot an error in the calculus or want to add a new algorithm (e.g., GANs, LSTM), please submit a Pull Request. Ensure your code relies primarily on NumPy.
-
-## License
-
-Distributed under the MIT License.
-
-## Contact
-
-Project Maintainer - [GitHub Profile](https://www.google.com/search?q=https://github.com/nikelroid)
+<p align="center">
+  <a href="https://kelidari.com">kelidari.com</a> ·
+  <a href="https://github.com/Nikelroid">github.com/Nikelroid</a>
+</p>

@@ -1,0 +1,4 @@
+# Vocareum submission metadata and local editor/OS cruft — never publish
+.voc/
+.gitconfig
+.DS_Store
