@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://nikelroid.github.io/machine-learning-implementations/"><img src="https://img.shields.io/badge/▶_Interactive_Playground-2D6B60?style=for-the-badge"></a>
+  <a href="https://kelidari.com/machine-learning-implementations/"><img src="https://img.shields.io/badge/▶_Interactive_Playground-2D6B60?style=for-the-badge"></a>
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white">
   <img src="https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white">
   <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white">
@@ -22,8 +22,8 @@ points and watch each one respond. KNN redraws its decision regions, k-means++ r
 converges, and the perceptron and logistic regression fit a boundary in front of you.
 
 <p align="center">
-  <a href="https://nikelroid.github.io/machine-learning-implementations/">
-    <b>▶ nikelroid.github.io/machine-learning-implementations</b>
+  <a href="https://kelidari.com/machine-learning-implementations/">
+    <b>▶ kelidari.com/machine-learning-implementations</b>
   </a>
 </p>
 
@@ -118,7 +118,7 @@ API surface.
 ---
 
 <p align="center">
-  <a href="https://nikelroid.github.io/machine-learning-implementations/">Playground</a> ·
+  <a href="https://kelidari.com/machine-learning-implementations/">Playground</a> ·
   <a href="https://kelidari.com">kelidari.com</a> ·
   <a href="https://github.com/Nikelroid">github.com/Nikelroid</a>
 </p>
